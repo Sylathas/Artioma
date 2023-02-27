@@ -212,7 +212,6 @@ class App {
 
         // Need a free camera for collisions
         var camera = new UniversalCamera("Camera", new Vector3(0, 2, 0), scene);
-        camera.setTarget(new Vector3(0, -8, 0));
         camera.attachControl(this._canvas, true);
 
         //Add WASD Controls
