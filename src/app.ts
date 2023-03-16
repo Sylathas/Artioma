@@ -2,9 +2,10 @@
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 
-import { Engine, Scene, Vector3, HDRCubeTexture, MeshBuilder, FreeCamera, Color4, StandardMaterial, Color3, PointLight, ShadowGenerator, GlowLayer, CubeTexture, Texture, AnimationGroup, UniversalCamera } from "@babylonjs/core";
+import { Engine, Scene, Vector3, HDRCubeTexture, MeshBuilder, FreeCamera, Color4, StandardMaterial, Color3, PointLight, ShadowGenerator, GlowLayer, Layer, Texture, UniversalCamera, VideoTexture } from "@babylonjs/core";
 import { AdvancedDynamicTexture, Button, Control } from "@babylonjs/gui";
 import { Environment } from "./environment";
+import { texts } from "./dialogues";
 
 enum State { START = 0, GAME = 1, LOSE = 2, CUTSCENE = 3 }
 
@@ -104,28 +105,49 @@ class App {
 
         this._scene.detachControl();
         let scene = new Scene(this._engine);
-        scene.clearColor = new Color4(0, 0, 0, 1);
+        let background = new Layer('background','', scene, true);
+        const videoBackground = new VideoTexture('videoBackground', "textures/background.mp4", scene);
+        background.texture = videoBackground;
+
         let camera = new FreeCamera("camera1", new Vector3(0, 0, 0), scene);
         camera.setTarget(Vector3.Zero());
 
-        //create a fullscreen ui for all of our GUI elements
-        const guiMenu = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-        guiMenu.idealHeight = 720; //fit our fullscreen ui to this height
+        //Create intro UI as a DOM HTML Element
+        const introUI = document.getElementById('intro');
 
-        //create a simple button
-        const startBtn = Button.CreateSimpleButton("start", "PLAY");
-        startBtn.width = 0.2
-        startBtn.height = "40px";
-        startBtn.color = "white";
-        startBtn.top = "-14px";
-        startBtn.thickness = 0;
-        startBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
-        guiMenu.addControl(startBtn);
+        //Description
+        let descIndex = 0;
+        const desc = document.getElementById("description");
+        desc.innerHTML = texts['introduction'][0][descIndex];
 
+        //click events on navigators
+        document.getElementById("navigatorSx").onclick = function(){
+            if(texts['introduction'][0][descIndex - 1]) {
+                descIndex--;
+                desc.innerHTML = texts['introduction'][0][descIndex];
+                document.getElementById("navigatorDx").style.opacity = '1';
+                if(!texts['introduction'][0][descIndex - 1]) {
+                    document.getElementById("navigatorSx").style.opacity = '.5';
+                }
+            }
+        };
+
+        document.getElementById("navigatorDx").onclick = function(){
+            if(texts['introduction'][0][descIndex + 1]) {
+                descIndex++;
+                desc.innerHTML = texts['introduction'][0][descIndex];
+                document.getElementById("navigatorSx").style.opacity = '1';
+                if(!texts['introduction'][0][descIndex + 1]) {
+                    document.getElementById("navigatorDx").style.opacity = '.5';
+                }
+            }
+        };
+
+        const game = this;
         //this handles interactions with the start button attached to the scene
-        startBtn.onPointerDownObservable.add(() => {
-            this._goToGame();
-        });
+        document.getElementById("play").onclick = function(){
+            game._goToGame();
+        };
 
         //--SCENE FINISHED LOADING--
         await scene.whenReadyAsync();
@@ -188,7 +210,7 @@ class App {
         envHdri.name = "env";
         envHdri.gammaSpace = false;
         scene.environmentTexture = envHdri;
-        scene.environmentIntensity = 0.04;
+        scene.environmentIntensity = 0.3;
 
         //Create skybox
         // Skybox
@@ -207,12 +229,15 @@ class App {
         //--WHEN SCENE FINISHED LOADING--
         await scene.whenReadyAsync();
 
+        document.getElementById('intro').remove();
+
         //Adding a light
-        var light = new PointLight("Omni", new Vector3(20, 20, 100), scene);
+        //var light = new PointLight("Omni", new Vector3(20, 20, 100), scene);
 
         // Need a free camera for collisions
         var camera = new UniversalCamera("Camera", new Vector3(0, 2, 0), scene);
         camera.attachControl(this._canvas, true);
+        camera.speed = .3;
 
         //Add WASD Controls
         camera.keysUpward.push(69); //increase elevation
@@ -237,7 +262,7 @@ class App {
 
          // Move the light with the camera
         scene.registerBeforeRender(function () {
-        light.position = camera.position;
+            //light.position = camera.position;
         });
 
         //get rid of start scene, switch to gamescene and change states

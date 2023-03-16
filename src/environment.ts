@@ -4,7 +4,7 @@ export class Environment {
     private _scene: Scene;
 
     //Meshes
-    public environmentModel: string = "Layout.glb"; //mesh of the map
+    public environmentModel: string = "Layout.gltf"; //mesh of the map
 
     constructor(scene: Scene) {
         this._scene = scene;
@@ -16,8 +16,17 @@ export class Environment {
         const assets = await this._loadAsset();
         //Loop through all environment meshes that were imported
         assets.allMeshes.forEach((m) => {
-            m.checkCollisions = true;
-            m.isPickable = true;
+            if (m.name.includes("collision")) {
+                m.checkCollisions = true;
+                m.isPickable = true;
+                m.isVisible = false;
+            } else if (m.name.includes("cloth")) {
+                m.checkCollisions = true;
+                m.isPickable = true;
+            } else {
+                m.checkCollisions = false;
+                m.isPickable = false;
+            }
         });
     }
 
